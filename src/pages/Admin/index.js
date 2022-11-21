@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import "./admin.css";
 
@@ -13,13 +13,13 @@ import {
   addDoc,
   collection,
   onSnapshot,
-  uery,
+  query,
   orderBy,
   doc,
   deleteDoc,
 } from "firebase/firestore";
 
-import {toast} from 'react-toastify';
+import { toast } from "react-toastify";
 
 export default function Admin() {
   const [nameInput, setNameInput] = useState("");
@@ -27,31 +27,58 @@ export default function Admin() {
   const [backgroundColorInput, setBackgroundColorInput] = useState("#F1F1F1");
   const [textColorInput, setTextColorInput] = useState("#121212");
 
+  const [links, setLinks] = useState([]);
+
+  useEffect(() => {
+    const linksRef = collection(db, "links");
+    const queryRef = query(linksRef, orderBy("created", "asc"));
+
+    const unsub = onSnapshot(queryRef, (snapshot) => {
+      let lista = [];
+
+      snapshot.forEach((doc) => {
+        lista.push({
+          id: doc.id,
+          name: doc.data().name,
+          url: doc.data().url,
+          bg: doc.data().bg,
+          color: doc.data().color,
+        });
+      });
+
+      setLinks(lista);
+    });
+  }, []);
+
   async function handleRegister(e) {
     e.preventDefault();
 
-    if(nameInput === '' || urlInput === '') {
-        toast.warn('Preencha todos os campos!')
-        return;
-    } 
+    if (nameInput === "" || urlInput === "") {
+      toast.warn("Preencha todos os campos!");
+      return;
+    }
 
     addDoc(collection(db, "links"), {
       name: nameInput,
       url: urlInput,
       bg: backgroundColorInput,
       color: textColorInput,
-      created: new Date()
-    }) 
-    .then(() => {
-      setNameInput("")
-      setUrlInput("")
-      console.log("Link registrado com sucesso!")
+      created: new Date(),
     })
-    .catch((error) => {
-      console.log('ERRO AO REGISTRAR' + error);
-      toast.error('Ops! Erro ao salvar o link 🕵️‍♂️')
-    })
+      .then(() => {
+        setNameInput("");
+        setUrlInput("");
+        console.log("Link registrado com sucesso!");
+      })
+      .catch((error) => {
+        console.log("ERRO AO REGISTRAR" + error);
+        toast.error("Ops! Erro ao salvar o link 🕵️‍♂️");
+      });
+  }
 
+  async function handleDeleteLink(id) {
+    const docRef = doc(db, "links", id);
+    await deleteDoc(docRef);
   }
 
   return (
@@ -118,17 +145,20 @@ export default function Admin() {
 
       <h2 className="title">Meus links</h2>
 
-      <article
-        className="list animate-pop"
-        style={{ backgroundColor: "#000", color: "#FFF" }}
-      >
-        <p>Grupo exclusivo no Telegram</p>
-        <div>
-          <button className="btn-delete">
-            <FiTrash2 size={18} color="#FFF" />
-          </button>
-        </div>
-      </article>
+      {links.map((item, index) => (
+        <article
+        key={index}
+          className="list animate-pop"
+          style={{ backgroundColor: item.bg, color: item.color }}
+        >
+          <p>{item.name}</p>
+          <div>
+            <button className="btn-delete" onClick={() => handleDeleteLink(item.id)}>
+              <FiTrash2 size={18} color="#FFF" />
+            </button>
+          </div>
+        </article>
+      ))}
     </div>
   );
 }
