@@ -8,6 +8,8 @@ import { MdAddLink } from "react-icons/md";
 import { db } from "../../services/firebaseConnection";
 import { setDoc, doc, getDoc } from "firebase/firestore";
 
+import {toast} from 'react-toastify';
+
 export default function Networks() {
   const [facebook, setFacebook] = useState("");
   const [instagram, setInstagram] = useState("");
@@ -15,8 +17,16 @@ export default function Networks() {
 
   useEffect(() => {
 
-    async function loadLinks() {
-
+     function loadLinks() {
+       const docRef = doc(db, "social", "link")
+        getDoc(docRef)
+        .then((snapshot) => {
+          if(snapshot.data() !== undefined) {
+            setFacebook(snapshot.data().facebook)
+            setInstagram(snapshot.data().instagram)
+            setYoutube(snapshot.data().youtube)
+          }
+        })
     }
 
     loadLinks();
@@ -33,9 +43,11 @@ export default function Networks() {
     })
     .then(() => {
       console.log("URLS SALVAS COM SUCESSO!")
+      toast.success("Salvo com sucesso ✔")
     })
     .catch((error) => {
       console.log("ERRO AO SALVAR " + error)
+      toast.error("Erro ao salvar ❌")
     })
 
   }
